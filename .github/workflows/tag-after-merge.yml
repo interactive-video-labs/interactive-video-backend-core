@@ -51,7 +51,7 @@ jobs:
           version = "${{ steps.package.outputs.version }}"
 
           def parts(value):
-              match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", value)
+              match = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", value)
               return tuple(int(part) for part in match.groups()) if match else None
 
           tags = subprocess.run(
@@ -64,7 +64,9 @@ jobs:
 
           new = parts(version)
           old = parts(last_tag)
-          if new == old:
+          if new is None:
+              release_type = "none"
+          elif new == old:
               release_type = "none"
           elif new <= old:
               release_type = "none"
