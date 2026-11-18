@@ -1,11 +1,17 @@
-from typing import Optional, List
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+import uuid
+from typing import Optional
 
-from interactive_video_backend_core.storage import AbstractSessionRepository
-from interactive_video_backend_core.models import DecisionSubmission, SessionResumeResponse
-from interactive_video_backend_core.orm_models import DecisionModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from interactive_video_backend_core.logic import DecisionLedgerEngine
+from interactive_video_backend_core.models import (
+    DecisionSubmission,
+    SessionResumeResponse,
+)
+from interactive_video_backend_core.orm_models import DecisionModel
+from interactive_video_backend_core.storage import AbstractSessionRepository
+
 
 class SQLAlchemySessionRepository(AbstractSessionRepository):
     """SQLAlchemy implementation of the session and decision storage layer."""
@@ -15,7 +21,6 @@ class SQLAlchemySessionRepository(AbstractSessionRepository):
 
     async def save_decision(self, decision: DecisionSubmission) -> None:
         """Persists a new decision entry into the database ledger."""
-        import uuid
         db_decision = DecisionModel(
             id=str(uuid.uuid4()),
             user_id=decision.user_id,
