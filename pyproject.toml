@@ -1,7 +1,37 @@
-[project]
+[tool.poetry]
 name = "interactive-video-backend-core"
 version = "0.1.0"
-dependencies = [
-    "pydantic>=2.0",
-    "sqlalchemy>=2.0",
-]
+description = "Framework-agnostic Python backend core and storage adapters for syncing interactive video state and decision ledgers"
+authors = ["Taj <tajulislamj200@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/interactive-video-labs"
+repository = "https://github.com/interactive-video-labs/interactive-video-backend-core"
+packages = [{ include = "interactive_video_backend_core", from = "." }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = ">=2.0"
+sqlalchemy = ">=2.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+pytest-asyncio = "^0.23.0"
+aiosqlite = "^0.20.0"
+httpx = "^0.27.0"
+
+[tool.pyright]
+useLibraryCodeForTypes = true
+exclude = [".cache", "dist", ".venv"]
+
+[tool.ruff]
+select = ["E", "W", "F", "I", "B", "C4", "ARG", "SIM"]
+ignore = ["W291", "W292", "W293"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
