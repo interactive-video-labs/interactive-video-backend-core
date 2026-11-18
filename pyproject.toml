@@ -1,0 +1,7 @@
+[project]
+name = "interactive-video-backend-core"
+version = "0.1.0"
+dependencies = [
+    "pydantic>=2.0",
+    "sqlalchemy>=2.0",
+]
