@@ -17,73 +17,131 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get new version from package.json
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Get package version
+        id: package
         run: |
-          VERSION=$(jq -r .version package.json)
-          echo "version=$VERSION" >> $GITHUB_ENV
+          python - <<'PY'
+          import os
+          import pathlib
+          import tomllib
 
-      - name: Get last tag (if exists)
+          with pathlib.Path("pyproject.toml").open("rb") as pyproject:
+              project = tomllib.load(pyproject)
+
+          version = project["tool"]["poetry"]["version"]
+          print(f"Package version: {version}")
+          with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"version={version}\n")
+          PY
+
+      - name: Check release type
+        id: release
         run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          LAST_TAG_STRIPPED=${LAST_TAG#v}
-          echo "last_tag=$LAST_TAG_STRIPPED" >> $GITHUB_ENV
+          python - <<'PY'
+          import os
+          import pathlib
+          import re
+          import subprocess
 
-      - name: Check release type (skip patch)
+          version = "${{ steps.package.outputs.version }}"
+
+          def parts(value):
+              match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", value)
+              return tuple(int(part) for part in match.groups()) if match else None
+
+          tags = subprocess.run(
+              ["git", "tag", "--list", "v*.*.*", "--sort=-v:refname"],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout.splitlines()
+          last_tag = next((tag for tag in tags if parts(tag) is not None), "v0.0.0")
+
+          new = parts(version)
+          old = parts(last_tag)
+          if new == old:
+              release_type = "none"
+          elif new <= old:
+              release_type = "none"
+          elif new[0] > old[0]:
+              release_type = "major"
+          elif new[1] > old[1]:
+              release_type = "minor"
+          else:
+              release_type = "patch"
+
+          tag_exists = subprocess.run(
+              ["git", "rev-parse", "-q", "--verify", f"refs/tags/v{version}"],
+              capture_output=True,
+          ).returncode == 0
+
+          should_release = release_type in {"major", "minor"} and not tag_exists
+          print(f"Package version: {version}")
+          print(f"Last tag: {last_tag}")
+          print(f"Release type: {release_type}")
+
+          with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"release_type={release_type}\n")
+              output.write(f"should_release={'true' if should_release else 'false'}\n")
+          PY
+
+      - name: Skip non-major or non-minor release
+        if: steps.release.outputs.should_release != 'true'
+        run: echo "No new major or minor release detected."
+
+      - name: Extract release notes
+        if: steps.release.outputs.should_release == 'true'
+        id: changelog
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+          RELEASE_TYPE: ${{ steps.release.outputs.release_type }}
         run: |
-          NEW=${{ env.version }}
-          OLD=${{ env.last_tag }}
+          python - <<'PY'
+          import os
+          import pathlib
+          import re
 
-          NEW_MAJOR=$(echo $NEW | cut -d. -f1)
-          NEW_MINOR=$(echo $NEW | cut -d. -f2)
-          NEW_PATCH=$(echo $NEW | cut -d. -f3)
+          version = os.environ["VERSION"]
+          changelog = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+          pattern = rf"^## \[v?{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)"
+          match = re.search(pattern, changelog, flags=re.MULTILINE | re.DOTALL)
+          notes = match.group(1).strip() if match else "No release notes found."
 
-          OLD_MAJOR=$(echo $OLD | cut -d. -f1)
-          OLD_MINOR=$(echo $OLD | cut -d. -f2)
-          OLD_PATCH=$(echo $OLD | cut -d. -f3)
+          heading = {
+              "major": "## 🚀 Major Release",
+              "minor": "## ✨ Minor Release",
+          }.get(os.environ["RELEASE_TYPE"], "")
+          if heading:
+              notes = f"{heading}\n\n{notes}"
 
-          if [ "$NEW_MAJOR" -gt "$OLD_MAJOR" ]; then
-            echo "release_type=major" >> $GITHUB_ENV
-          elif [ "$NEW_MINOR" -gt "$OLD_MINOR" ]; then
-            echo "release_type=minor" >> $GITHUB_ENV
-          else
-            echo "release_type=patch" >> $GITHUB_ENV
-          fi
-
-      - name: Skip if patch
-        if: env.release_type == 'patch'
-        run: echo "Patch release detected → no tag or release will be created."
+          with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write("notes<<EOF\n")
+              output.write(notes)
+              output.write("\nEOF\n")
+          PY
 
       - name: Create and push git tag
-        if: env.release_type != 'patch'
+        if: steps.release.outputs.should_release == 'true'
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag v${{ env.version }}
-          git push origin v${{ env.version }}
-
-      - name: Extract release notes from CHANGELOG
-        if: env.release_type != 'patch'
-        id: changelog
-        run: |
-          # Match lines starting with "## vX.Y.Z " until the next "## "
-          awk "/^## v${{ env.version }}[[:space:]]/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md > RELEASE_NOTES.md
-
-          echo "notes<<EOF" >> $GITHUB_ENV
-          if [ "${{ env.release_type }}" = "major" ]; then
-            echo "## 🚀 Major Release" >> $GITHUB_ENV
-          elif [ "${{ env.release_type }}" = "minor" ]; then
-            echo "## ✨ Minor Release" >> $GITHUB_ENV
-          fi
-          echo "" >> $GITHUB_ENV
-          cat RELEASE_NOTES.md >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
 
       - name: Create GitHub Release
-        if: env.release_type != 'patch'
+        if: steps.release.outputs.should_release == 'true'
         uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ env.version }}
-          name: 'Release v${{ env.version }}'
-          body: ${{ env.notes }}
         env:
+          VERSION: ${{ steps.package.outputs.version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
+          body: ${{ steps.changelog.outputs.notes }}
