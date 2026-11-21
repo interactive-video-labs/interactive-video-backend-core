@@ -1,16 +1,16 @@
-# Interactive Video Backend Core
+# interactive-video-labs-core 0.2.0
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/interactive-video-labs/docs/main/logo.svg" width="200" alt="Interactive Video Labs Logo" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/pypi/v/interactive-video-backend-core" alt="PyPI Version" />
-  <img src="https://img.shields.io/pypi/l/interactive-video-backend-core" alt="License" />
-  <img src="https://img.shields.io/pypi/dm/interactive-video-backend-core" alt="PyPI Downloads" />
+  <img src="https://img.shields.io/pypi/v/interactive-video-labs-core" alt="PyPI Version" />
+  <img src="https://img.shields.io/pypi/l/interactive-video-labs-core" alt="License" />
+  <img src="https://img.shields.io/pypi/dm/interactive-video-labs-core" alt="PyPI Downloads" />
 </p>
 
-`interactive-video-backend-core` is a framework-agnostic Python library for storing and resuming interactive video sessions. It provides Pydantic data models, decision transition validation, state reconstruction, and an async SQLAlchemy session repository for use with frameworks and databases such as FastAPI and PostgreSQL or SQLite.
+Framework-agnostic Python backend core and storage adapters for syncing interactive video state and decision ledgers.
 
 The package is designed to complement [`@interactive-video-labs/core`](https://github.com/interactive-video-labs/interactive-video-core), the framework-agnostic TypeScript player used by interactive video applications.
 
@@ -41,13 +41,13 @@ The package is designed to complement [`@interactive-video-labs/core`](https://g
 ### Poetry
 
 ```bash
-poetry add interactive-video-backend-core
+poetry add interactive-video-labs-core
 ```
 
 ### pip
 
 ```bash
-pip install interactive-video-backend-core
+pip install interactive-video-labs-core
 ```
 
 ---
