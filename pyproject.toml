@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "interactive-video-backend-core"
+name = "@interactive-video-labs/core"
 version = "0.2.0"
 description = "Framework-agnostic Python backend core and storage adapters for syncing interactive video state and decision ledgers"
 authors = ["Taj <tajulislamj200@gmail.com>"]
