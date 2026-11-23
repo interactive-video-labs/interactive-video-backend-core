@@ -1,4 +1,4 @@
-# interactive-video-labs-core 0.2.0
+# interactive-video-labs-core 
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/interactive-video-labs/docs/main/logo.svg" width="200" alt="Interactive Video Labs Logo" />
