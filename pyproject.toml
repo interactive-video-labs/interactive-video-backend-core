@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "interactive-video-labs_core"
-version = "0.2.0"
+version = "0.3.0"
 description = "Framework-agnostic Python backend core and storage adapters for syncing interactive video state and decision ledgers"
 authors = ["Taj <tajulislamj200@gmail.com>"]
 readme = "README.md"
