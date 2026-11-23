@@ -47,6 +47,7 @@ interactive-video-backend-core/
 ├── interactive_video_backend_core/
 │   ├── __init__.py
 │   ├── logic.py
+│   ├── live.py
 │   ├── models.py
 │   ├── orm_models.py
 │   ├── storage.py
@@ -54,6 +55,7 @@ interactive-video-backend-core/
 ├── tests/
 │   ├── conftest.py
 │   ├── test_logic.py
+│   ├── test_live.py
 │   └── test_storage.py
 ├── pyproject.toml
 ├── README.md
@@ -83,6 +85,10 @@ Contains `DecisionLedgerEngine`, a framework-independent business logic class:
 - `reconstruct_state()` returns the latest node and playback timestamp from decision submissions.
 
 The logic module does not perform database operations.
+
+### `live.py`
+
+Defines versioned, framework-independent Pydantic WebSocket events and pure room snapshot/tally builders. `handle_decision_submitted()` persists through `AbstractSessionRepository`, then returns poll and analytics events using the prior room decisions supplied by the host. It does not own connection lifecycle, room membership, or room-wide ledger queries.
 
 ### `orm_models.py`
 

@@ -22,6 +22,7 @@ The package is designed to complement [`@interactive-video-labs/core`](https://g
 - **Session resume:** Reconstruct the latest node and playback timestamp for a user session.
 - **Transition validation:** Verify that a submitted choice belongs to the choices allowed for the current node.
 - **Pydantic models:** Use typed, validated submission and resume response models.
+- **Live session protocol:** Validate versioned WebSocket event schemas and build room snapshots and decision tallies.
 - **Async SQLAlchemy storage:** Work with async database sessions and SQLAlchemy 2.x.
 - **Framework agnostic:** Integrate the core with FastAPI, Django, Litestar, or another Python backend.
 - **Chronological state recovery:** Rebuild state even when decision records arrive out of order.
@@ -160,6 +161,60 @@ If the decision list is empty, the engine returns `("start", 0.0)`.
 
 ---
 
+## Framework-Agnostic Live Sync
+
+The `interactive_video_backend_core.live` module defines versioned Pydantic events for room state, playback sync, cue and node transitions, decision submissions, poll tallies, analytics updates, and presence updates. It contains no HTTP or WebSocket server dependency; mount a native endpoint in your framework and use these models and helpers inside its message handler.
+
+Build a reconnect snapshot from the host application's current playback state and the room's decision ledger:
+
+```python
+from datetime import datetime, timezone
+
+from interactive_video_backend_core.live import build_room_state
+
+snapshot = build_room_state(
+    room_id="room-1",
+    session_id="session-1",
+    video_id="video-1",
+    segment_id="segment-2",
+    anchor_timestamp=42.5,
+    server_timestamp=datetime.now(timezone.utc),
+    playback_state="playing",
+    active_cue_id="cue-3",
+    participant_count=4,
+    decisions=room_decisions,
+)
+await send_json(snapshot.model_dump(mode="json"))
+```
+
+The builder scopes decision aggregates to the requested video and reconstructs the active node from the latest decision when one is not supplied. The host remains responsible for loading playback state, participant count, and the room's decisions; the repository contract intentionally remains user/session based.
+
+Persist an incoming decision and prepare events for the connected clients:
+
+```python
+from pydantic import TypeAdapter
+
+from interactive_video_backend_core.live import (
+    DecisionSubmittedEvent,
+    LiveSessionEvent,
+    handle_decision_submitted,
+)
+
+event = TypeAdapter(LiveSessionEvent).validate_json(message_json)
+if isinstance(event, DecisionSubmittedEvent):
+    updates = await handle_decision_submitted(
+        event,
+        repository,
+        previous_decisions=room_decisions,
+    )
+    await broadcast_json(updates.poll_tally.model_dump(mode="json"))
+    await broadcast_json(updates.analytics_updated.model_dump(mode="json"))
+```
+
+Load `previous_decisions` from the relevant room and exclude the incoming decision. The handler persists before returning aggregate events; repository errors propagate to the adapter. Other event models can likewise be validated and routed by the host's framework-specific WebSocket endpoint.
+
+---
+
 ## Storage Interface
 
 `AbstractSessionRepository` defines the framework-independent persistence contract:
@@ -264,6 +319,7 @@ interactive-video-backend-core/
 ├── interactive_video_backend_core/
 │   ├── __init__.py
 │   ├── logic.py
+│   ├── live.py
 │   ├── models.py
 │   ├── orm_models.py
 │   ├── storage.py
@@ -271,6 +327,7 @@ interactive-video-backend-core/
 ├── tests/
 │   ├── conftest.py
 │   ├── test_logic.py
+│   ├── test_live.py
 │   └── test_storage.py
 ├── pyproject.toml
 └── README.md
