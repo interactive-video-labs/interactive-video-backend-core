@@ -11,6 +11,26 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## v0.3.0 2026-11-23
+
+### Added
+
+- add live session protocol with WebSocket event handling and decision aggregation
+
+### Changed
+
+- Merge pull request #26 from taj54/main
+- Merge pull request #21 from interactive-video-labs/renovate/taj54-universal-version-bump-1.x
+- Merge pull request #24 from taj54/main
+- update package name in developer guide and README to use 'interactive-video-labs-core'
+- Merge pull request #23 from taj54/main
+- main' into main
+- update package name to remove organization scope
+- Merge pull request #22 from taj54/main
+- update package name to use underscore instead of slash
+- update package name to include organization scope
+- Update taj54/universal-version-bump action to v1.6.0
+
 ## v0.2.0 2026-11-18
 
 ### Changed
