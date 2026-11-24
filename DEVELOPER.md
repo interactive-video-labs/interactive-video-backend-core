@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/interactive-video-labs/docs/main/logo.svg" width="200" alt="Interactive Video Labs Logo" />
 </p>
 
-# interactive-video-labs-core 0.2.0 Developer Guide
+# interactive-video-labs-core 0.3.0 Developer Guide
 
 This guide explains how to set up, develop, test, and publish `interactive-video-labs-core`.
 
@@ -90,6 +90,16 @@ The logic module does not perform database operations.
 
 Defines versioned, framework-independent Pydantic WebSocket events and pure room snapshot/tally builders. `handle_decision_submitted()` persists through `AbstractSessionRepository`, then returns poll and analytics events using the prior room decisions supplied by the host. It does not own connection lifecycle, room membership, or room-wide ledger queries.
 
+The public live API includes:
+
+- `LiveSessionEvent`, a discriminated Pydantic union for protocol version 1 events.
+- `RoomStateEvent` and `build_room_state()` for reconnect snapshots.
+- `aggregate_decision_tallies()` for node-and-choice counts.
+- `build_poll_tally()` for one node or poll.
+- `handle_decision_submitted()` for persistence and broadcast updates.
+
+The live module is intentionally framework agnostic. HTTP routing, WebSocket connection management, authentication, room membership, and room ledger loading belong in the host application.
+
 ### `orm_models.py`
 
 Defines SQLAlchemy declarations:
@@ -153,6 +163,7 @@ The test configuration in `pyproject.toml` uses:
 
 ```bash
 poetry run pytest tests/test_logic.py
+poetry run pytest tests/test_live.py
 poetry run pytest tests/test_storage.py
 ```
 
