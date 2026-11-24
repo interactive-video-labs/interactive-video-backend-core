@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/pypi/v/interactive-video-labs-core" alt="PyPI Version" />
+  <a href="https://pypi.org/project/interactive-video-labs-core/"><img src="https://img.shields.io/pypi/v/interactive-video-labs-core" alt="PyPI Version" /></a>
   <img src="https://img.shields.io/pypi/l/interactive-video-labs-core" alt="License" />
   <img src="https://img.shields.io/pypi/dm/interactive-video-labs-core" alt="PyPI Downloads" />
 </p>

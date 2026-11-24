@@ -2,8 +2,7 @@
   <img src="https://raw.githubusercontent.com/interactive-video-labs/docs/main/logo.svg" width="200" alt="Interactive Video Labs Logo" />
 </p>
 
-# interactive-video-labs-core 0.3.0 Developer Guide
-
+# interactive-video-labs-core Developer Guide
 This guide explains how to set up, develop, test, and publish `interactive-video-labs-core`.
 
 Framework-agnostic Python backend core and storage adapters for syncing interactive video state and decision ledgers. The package uses Pydantic 2, SQLAlchemy 2 async APIs, and Poetry for dependency management.
