@@ -1,11 +1,11 @@
-# interactive-video-labs-core 0.2.0
+# interactive-video-labs-core 
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/interactive-video-labs/docs/main/logo.svg" width="200" alt="Interactive Video Labs Logo" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/pypi/v/interactive-video-labs-core" alt="PyPI Version" />
+  <a href="https://pypi.org/project/interactive-video-labs-core/"><img src="https://img.shields.io/pypi/v/interactive-video-labs-core" alt="PyPI Version" /></a>
   <img src="https://img.shields.io/pypi/l/interactive-video-labs-core" alt="License" />
   <img src="https://img.shields.io/pypi/dm/interactive-video-labs-core" alt="PyPI Downloads" />
 </p>
@@ -163,7 +163,20 @@ If the decision list is empty, the engine returns `("start", 0.0)`.
 
 ## Framework-Agnostic Live Sync
 
-The `interactive_video_backend_core.live` module defines versioned Pydantic events for room state, playback sync, cue and node transitions, decision submissions, poll tallies, analytics updates, and presence updates. It contains no HTTP or WebSocket server dependency; mount a native endpoint in your framework and use these models and helpers inside its message handler.
+The `interactive_video_backend_core.live` module defines versioned Pydantic event models and helpers for room state, playback sync, cue and node transitions, decision submissions, poll tallies, analytics updates, and presence updates. It contains no HTTP or WebSocket server dependency; mount a native endpoint in your framework and use these models and helpers inside its message handler.
+
+All live events use protocol `version = 1`. The `LiveSessionEvent` union uses the event `type` as a Pydantic discriminator, and invalid event types or payload fields raise Pydantic validation errors.
+
+| Event type | Purpose |
+| --- | --- |
+| `room:state` | Reconnect snapshot for a room |
+| `playback:sync` | Shared playback position and state |
+| `cue:triggered` | Cue activation |
+| `node:entered` | Interactive node activation |
+| `decision:submitted` | A viewer choice submission |
+| `poll:tally` | Choice totals for a node |
+| `analytics:updated` | Decision totals and tallies for a video |
+| `presence:update` | Viewer join or leave state |
 
 Build a reconnect snapshot from the host application's current playback state and the room's decision ledger:
 
@@ -212,6 +225,27 @@ if isinstance(event, DecisionSubmittedEvent):
 ```
 
 Load `previous_decisions` from the relevant room and exclude the incoming decision. The handler persists before returning aggregate events; repository errors propagate to the adapter. Other event models can likewise be validated and routed by the host's framework-specific WebSocket endpoint.
+
+The module also provides `aggregate_decision_tallies()` for node-and-choice counts and `build_poll_tally()` for one node. Both helpers can be used independently of the repository:
+
+```python
+from interactive_video_backend_core.live import (
+    aggregate_decision_tallies,
+    build_poll_tally,
+)
+
+tallies = aggregate_decision_tallies(
+    room_decisions,
+    video_id="video-1",
+)
+
+poll_tally = build_poll_tally(
+    room_id="room-1",
+    video_id="video-1",
+    node_id="question-1",
+    decisions=room_decisions,
+)
+```
 
 ---
 
